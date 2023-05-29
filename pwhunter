@@ -1,0 +1,39 @@
+# Get all the share names from Server1. Replace 'Server1' with your actual server name.
+$shareNames = Get-SmbShare -CimSession 'Server1' | Where-Object -FilterScript {$_.Name -notlike '*$'} | Select-Object -ExpandProperty Name
+
+# Prepend the server name and a backslash to each share name to form the full path.
+$paths = $shareNames | ForEach-Object -Process {"\\Server1\$_"}
+
+# Define a hashtable where the keys are the file extensions and the values are arrays of strings to search for.
+$extensionSearchStrings = @{
+    '.ps1' = @('ConvertTo-SecureString', 'SqlConnection', 'LdapConnection', 'NetworkCredential');
+    '.vbs' = @('strDomain', 'strPassword');
+    '.sql' = @('Trusted_Connection', 'Integrated Security', 'Connect');
+    '.txt' = @('pwd', 'pass');
+}
+
+# Go through each network share.
+foreach ($path in $paths) {
+    # Go through each file extension and its corresponding array of search strings.
+    foreach ($entry in $extensionSearchStrings.GetEnumerator()) {
+        $extension = $entry.Key
+        $searchStrings = $entry.Value
+
+        # Get all the files in the current network share with the current file extension.
+        $files = Get-ChildItem -Path $path -Filter "*$extension" -Recurse -ErrorAction SilentlyContinue -File
+
+        # Go through each search string.
+        foreach ($searchString in $searchStrings) {
+            # Go through each file.
+            foreach ($file in $files) {
+                # Check if the current search string is in the current file.
+                $result = Select-String -Path $file.FullName -Pattern $searchString -ErrorAction SilentlyContinue
+
+                # If the search string was found in the file, output the path of the file and the line where it was found.
+                if ($result) {
+                    Write-Output "Found '$searchString' in $($file.FullName) on line $($result.LineNumber)"
+                }
+            }
+        }
+    }
+}
