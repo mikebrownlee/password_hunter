@@ -9,7 +9,7 @@ $extensionSearchStrings = @{
     '.ps1' = @('ConvertTo-SecureString', 'SqlConnection', 'LdapConnection', 'NetworkCredential');
     '.vbs' = @('strDomain', 'strPassword');
     '.sql' = @('Trusted_Connection', 'Integrated Security', 'Connect');
-    '.txt' = @('pwd', 'pass');
+    '.txt' = @('pwd', 'pass', 'password', 'passwd', 'pwd123', 'auth', 'login');
 }
 
 # Go through each network share.
